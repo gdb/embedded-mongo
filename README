@@ -1,0 +1,7 @@
+A Ruby implemenation of the Mongo interface.
+
+embedded-mongo's goal is to provide the same interface as mongodb but
+be embedded inside the calling process.  This allows unit tests to be
+run without the overhead of database roundtrips or the creation of
+ad-hoc mock layers.  It also allows one to start using the mongodb
+interface for new projects without having to set up a real database.
