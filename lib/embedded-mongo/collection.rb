@@ -1,8 +1,14 @@
 module EmbeddedMongo
   class Collection < Mongo::Collection
     def insert_documents(documents, collection_name=@name, check_keys=true, safe=false)
-      puts "documents: #{documents.inspect}, #{collection_name.inspect}, #{check_keys.inspect}, #{safe.inspect}"
+      EmbeddedMongo.log.debug("insert_documents: #{documents.inspect}, #{collection_name.inspect}, #{check_keys.inspect}, #{safe.inspect}")
       @connection.request(:insert_documents, @db.name, collection_name, documents)
+    end
+
+    def update(selector, document, opts={})
+      EmbeddedMongo.log.debug("update: #{selector.inspect}, #{document.inspect}, #{opts.inspect}")
+      opts = { :safe => @safe }.merge(opts)
+      @connection.request(:update, @db.name, @name, selector, document, opts)
     end
 
     # verbatim

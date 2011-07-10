@@ -17,6 +17,12 @@ module EmbeddedMongo::Backend
       collection.find(selector)
     end
 
+    def update(db_name, collection_name, selector, update, opts)
+      EmbeddedMongo.log.info("FIND: #{db_name.inspect} #{collection_name.inspect} #{selector.inspect} #{update.inspect} #{opts.inspect}")
+      collection = get_collection(db_name, collection_name)
+      collection.update(selector, update, opts)
+    end
+
     private
 
     def get_db(db_name)

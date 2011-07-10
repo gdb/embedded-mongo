@@ -1,3 +1,5 @@
+# TODO: deep clone upon insert
+
 module EmbeddedMongo::Backend
   class Collection
     class DuplicateKeyError < StandardError; end
@@ -25,6 +27,14 @@ module EmbeddedMongo::Backend
       results
     end
 
+    def update(selector, update, opts)
+      @data.each do |doc|
+        next unless selector_match?(selector, doc)
+        apply_update!(update, doc)
+        break unless opts[:multi]
+      end
+    end
+
     private
 
     def check_id(doc)
@@ -41,7 +51,7 @@ module EmbeddedMongo::Backend
         check_id(doc)
         check_duplicate_key(doc)
       rescue DuplicateKeyError
-        $stderr.puts "Duplicate key error: #{id}"
+        EmbeddedMongo.log.info("Duplicate key error: #{id}")
         return
       end
 
@@ -50,6 +60,16 @@ module EmbeddedMongo::Backend
 
     def selector_match?(selector, doc)
       selector.all? { |k, v| doc[k] == v }
+    end
+
+    def apply_update!(update, doc)
+      EmbeddedMongo.log.info("Applying update: #{update.inspect} to #{doc.inspect}")
+      id = doc['_id']
+      doc.clear
+      update.each do |k, v|
+        doc[k] = v
+      end
+      doc['_id'] ||= id
     end
   end
 end
