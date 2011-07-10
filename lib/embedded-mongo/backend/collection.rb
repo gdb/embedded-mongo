@@ -63,7 +63,49 @@ module EmbeddedMongo::Backend
 
     def selector_match?(selector, doc)
       raise NotImplementedError.new('Does not current support $where queries') if selector.has_key?('$where')
-      selector.all? { |k, v| doc[k] == v }
+      selector.all? { |k, v| partial_match?(v, doc[k]) }
+    end
+
+    def partial_match?(partial_selector, value)
+      EmbeddedMongo.log.debug("partial_match? #{partial_selector.inspect} #{value.inspect}")
+      case partial_selector
+      when Array, String, BSON::ObjectId, nil
+        partial_selector == value
+      when Hash
+        if partial_selector.all? { |k, v| !k.start_with?('$') }
+          partial_selector == value
+        else
+          raise NotImplementedError.new("Cannot mix $ directives with non: #{partial_selector.inspect}") if partial_selector.any? { |k, v| !k.start_with?('$') }
+          partial_selector.all? do |k, v|
+            directive_match?(k, v, value)
+         end
+        end
+      else
+        raise "Unsupported selector #{partial_selector.inspect}"
+      end
+    end
+
+    def directive_match?(directive_key, directive_value, value)
+      case directive_key
+      when '$lt'
+        raise NotImplementedError.new("Only implemented for numeric directive values: #{directive_value.inspect}") unless directive_value.kind_of?(Numeric)
+        value and value < directive_value
+      when '$gt'
+        raise NotImplementedError.new("Only implemented for numeric directive values: #{directive_value.inspect}") unless directive_value.kind_of?(Numeric)
+        value and value > directive_value
+      when '$gte'
+        raise NotImplementedError.new("Only implemented for numeric directive values: #{directive_value.inspect}") unless directive_value.kind_of?(Numeric)
+        value and value >= directive_value
+      when '$lte'
+        raise NotImplementedError.new("Only implemented for numeric directive values: #{directive_value.inspect}") unless directive_value.kind_of?(Numeric)
+        value and value <= directive_value
+      when '$in'
+        raise NotImplementedError.new("Only implemented for arrays: #{directive_value.inspect}") unless directive_value.kind_of?(Array)
+        directive_value.include?(value)
+      else
+        raise NotImplementedError.new("Have yet to implement: #{directive_key}")
+        # raise Mongo::OperationFailure.new("invalid operator: #{directive_key}")
+      end
     end
 
     def apply_update!(update, doc)

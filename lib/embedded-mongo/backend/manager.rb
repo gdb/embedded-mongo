@@ -6,14 +6,14 @@ module EmbeddedMongo::Backend
     end
 
     def insert_documents(db_name, collection_name, documents)
-      documents.each { |doc| EmbeddedMongo::Util.stringify_keys!(doc) }
+      documents.each { |doc| EmbeddedMongo::Util.stringify_hash!(doc) }
       EmbeddedMongo.log.info("INSERT: #{db_name.inspect} #{collection_name.inspect} #{documents.inspect}")
       collection = get_collection(db_name, collection_name)
       collection.insert_documents(documents)
     end
 
     def find(db_name, collection_name, selector)
-      EmbeddedMongo::Util.stringify_keys!(selector)
+      EmbeddedMongo::Util.stringify_hash!(selector)
       EmbeddedMongo.log.info("FIND: #{db_name.inspect} #{collection_name.inspect} #{selector.inspect}")
       if collection_name == '$cmd'
         db = get_db(db_name)
@@ -24,15 +24,15 @@ module EmbeddedMongo::Backend
     end
 
     def update(db_name, collection_name, selector, update, opts)
-      EmbeddedMongo::Util.stringify_keys!(selector)
-      EmbeddedMongo::Util.stringify_keys!(update)
+      EmbeddedMongo::Util.stringify_hash!(selector)
+      EmbeddedMongo::Util.stringify_hash!(update)
       EmbeddedMongo.log.info("FIND: #{db_name.inspect} #{collection_name.inspect} #{selector.inspect} #{update.inspect} #{opts.inspect}")
       collection = get_collection(db_name, collection_name)
       collection.update(selector, update, opts)
     end
 
     def remove(db_name, collection_name, selector, opts)
-      EmbeddedMongo::Util.stringify_keys!(selector)
+      EmbeddedMongo::Util.stringify_hash!(selector)
       EmbeddedMongo.log.info("REMOVE: #{db_name.inspect} #{collection_name.inspect} #{selector.inspect} #{opts.inspect}")
       collection = get_collection(db_name, collection_name)
       collection.remove(selector, opts)
