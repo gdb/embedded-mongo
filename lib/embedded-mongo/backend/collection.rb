@@ -62,6 +62,7 @@ module EmbeddedMongo::Backend
     end
 
     def selector_match?(selector, doc)
+      raise NotImplementedError.new('Does not current support $where queries') if selector.has_key?('$where')
       selector.all? { |k, v| doc[k] == v }
     end
 
