@@ -1,6 +1,6 @@
-$:.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
+$:.unshift(File.join(File.dirname(__FILE__), '..', '..', 'lib'))
 require 'rubygems' if RUBY_VERSION < '1.9.0' && ENV['C_EXT']
-require 'mongo'
+require 'embedded-mongo'
 require 'test/unit'
 
 def silently
@@ -47,7 +47,7 @@ class Test::Unit::TestCase
   include BSON
 
   def self.standard_connection(options={})
-    Connection.new(TEST_HOST, TEST_PORT, options)
+    EmbeddedMongo::Connection.new(TEST_HOST, TEST_PORT, options)
   end
 
   def standard_connection(options={})

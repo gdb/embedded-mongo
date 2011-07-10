@@ -1,4 +1,4 @@
-require './test/test_helper'
+require File.join(File.dirname(__FILE__), 'test_helper')
 
 class DBAPITest < Test::Unit::TestCase
   include Mongo
