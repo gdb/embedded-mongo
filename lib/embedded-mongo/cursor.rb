@@ -8,11 +8,17 @@ module EmbeddedMongo
       if @query_run
         false
       else
-        results = @connection.request(:query, @db.name, @collection.name, selector)
+        results = @connection.request(:find, @db.name, @collection.name, selector)
         @returned += results.length
         @cache += results
         @query_run = true
       end
+    end
+
+    def count(skip_and_limit=false)
+      raise NotImplementedError.new if skip_and_limit
+      send_initial_query
+      @cache.length
     end
   end
 end

@@ -11,10 +11,10 @@ module EmbeddedMongo::Backend
       collection.insert_documents(documents)
     end
 
-    def query(db_name, collection_name, query)
-      EmbeddedMongo.log.info("FIND: #{db_name.inspect} #{collection_name.inspect} #{query.inspect}")
+    def find(db_name, collection_name, selector)
+      EmbeddedMongo.log.info("FIND: #{db_name.inspect} #{collection_name.inspect} #{selector.inspect}")
       collection = get_collection(db_name, collection_name)
-      collection.query(query)
+      collection.find(selector)
     end
 
     private
