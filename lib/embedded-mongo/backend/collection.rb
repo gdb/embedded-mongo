@@ -4,21 +4,19 @@ module EmbeddedMongo::Backend
   class Collection
     class DuplicateKeyError < StandardError; end
 
-    def initialize(name)
+    def initialize(db, name)
+      raise ArgumentError.new("Invalid collection name #{name.inspect}") if name['.'] or name['$']
+      @db = db
       @name = name
       @data = []
     end
 
     def insert_documents(documents)
-      documents.each { |doc| EmbeddedMongo::Util.stringify_keys!(doc) }
-
       documents.each { |doc| insert(doc) }
       documents.map { |doc| doc['_id'] }
     end
 
     def find(selector)
-      EmbeddedMongo::Util.stringify_keys!(selector)
-
       results = []
       @data.each do |doc|
         results << doc if selector_match?(selector, doc)
@@ -28,11 +26,16 @@ module EmbeddedMongo::Backend
     end
 
     def update(selector, update, opts)
+
       @data.each do |doc|
         next unless selector_match?(selector, doc)
         apply_update!(update, doc)
         break unless opts[:multi]
       end
+    end
+
+    def remove(selector={}, opts={})
+      @data.reject! { |doc| selector_match?(selector, doc) }
     end
 
     private

@@ -8,6 +8,7 @@ class InterfaceTest < Test::Unit::TestCase
     # Tests should pass with either of the following lines
     @conn = EmbeddedMongo::Connection.new
     # @conn = Mongo::Connection.new
+
     @test_db = @conn['test']
     @foo_collection = @test_db['foo']
   end
@@ -38,5 +39,17 @@ class InterfaceTest < Test::Unit::TestCase
     cursor = @foo_collection.find({ '_id' => 'other_id' })
     assert_equal(1, cursor.count)
     assert_equal({ '_id' => 'other_id' }, cursor.first)
+  end
+
+  def test_remove
+    id1 = @foo_collection.insert({ 'lime' => 'limit' })
+    id2 = @foo_collection.insert({ 'lemon' => 'limit' })
+    @foo_collection.remove({ 'lime' => 'limit' })
+
+    cursor = @foo_collection.find({ '_id' => id1 })
+    assert_equal(0, cursor.count)
+    cursor = @foo_collection.find({ '_id' => id2 })
+    assert_equal(1, cursor.count)
+    assert_equal({ '_id' => id2, 'lemon' => 'limit' }, cursor.first)
   end
 end
