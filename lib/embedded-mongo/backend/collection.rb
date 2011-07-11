@@ -53,7 +53,8 @@ module EmbeddedMongo::Backend
       end
 
       if n == 0 and upsert
-        insert(update)
+        apply_update!(update, selector)
+        insert(selector)
         @db.set_last_error({ 'updatedExisting' => false, 'upserted' => update['_id'], 'n' => 1 })
       else
         @db.set_last_error({ 'updatedExisting' => n > 0, 'n' => n })
@@ -131,10 +132,10 @@ module EmbeddedMongo::Backend
       when Array, Numeric, String, BSON::ObjectId, Boolean, nil
         partial_selector == value
       when Hash
-        if partial_selector.all? { |k, v| !k.start_with?('$') }
+        if no_directive?(partial_selector)
           partial_selector == value
         else
-          raise NotImplementedError.new("Cannot mix $ directives with non: #{partial_selector.inspect}") if partial_selector.any? { |k, v| !k.start_with?('$') }
+          raise NotImplementedError.new("Cannot mix $ directives with non: #{partial_selector.inspect}") if has_non_directive?(partial_selector)
           partial_selector.all? do |k, v|
             directive_match?(k, v, value)
          end
@@ -171,12 +172,38 @@ module EmbeddedMongo::Backend
 
     def apply_update!(update, doc)
       EmbeddedMongo.log.info("Applying update: #{update.inspect} to #{doc.inspect}")
-      id = doc['_id']
-      doc.clear
-      update.each do |k, v|
-        doc[k] = v
+      if no_directive?(update)
+        id = doc['_id']
+        doc.clear
+        update.each do |k, v|
+          doc[k] = v
+        end
+        doc['_id'] ||= id
+      else
+        # TODO: should set_last_error to {"err"=>"Modifiers and non-modifiers cannot be mixed", "code"=>10154, "n"=>0, "ok"=>1.0}
+        raise NotImplementedError.new("Modifiers and non-modifiers cannot be mixed #{update.inspect}") if has_non_directive?(update)
+        update.each do |directive_key, directive_value|
+          apply_update_directive!(directive_key, directive_value, doc)
+        end
+        doc['_id'] ||= id
       end
-      doc['_id'] ||= id
+    end
+
+    def apply_update_directive!(directive_key, directive_value, doc)
+      case directive_key
+      when '$set'
+        directive_value.each { |k, v| doc[k] = v }
+      else
+        raise NotImplementedError.new("Have yet to implement updating: #{directive_key}")
+      end
+    end
+
+    def has_non_directive?(document)
+      document.any? { |k, v| !k.start_with?('$') }
+    end
+
+    def no_directive?(document)
+      document.all? { |k, v| !k.start_with?('$') }
     end
   end
 end
