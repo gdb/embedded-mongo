@@ -1,6 +1,20 @@
 == What ==
 
-A Ruby implementation of the Mongo interface.
+A Ruby implementation of the MongoDB interface.
+
+Just swap out the line "Mongo::Connection.new" in your application
+with "EmbeddedMongo::Connection.new" and leave the rest of the code
+alone.  No server process needed!
+
+E.g.
+
+    conn = EmbeddedMongo::Connection.new
+    coll = conn['test']['embedded']
+    coll.insert({ 'hello' => 'world' })
+    coll.find.to_a
+    # => [{"_id"=>BSON::ObjectId('4e1b4027f626214e9e000001'), "hello"=>"world"}]
+
+== Goal ==
 
 embedded-mongo's goal is to provide the same interface as mongodb but
 be embedded inside the calling process.  This allows unit tests to be
@@ -14,7 +28,9 @@ be wrong.
 
 Most of the query semantics have been coded.  Many of the database
 management operations have not.  Nothing involving execution of
-JavaScript has been coded, because that sounds like work.
+JavaScript has been coded, because that sounds like work.  Persistence
+hasn't been added, though that could be as easy as a Marshal or YAML
+dump when needed.
 
-I think the killer Next Thing to add is indexes.  Currently everything
-works via a linear scan of the database, which can be very expensive.
+I think the next thing to add is indexes.  Currently everything works
+via a linear scan of the database.
