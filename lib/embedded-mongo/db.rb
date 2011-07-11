@@ -1,5 +1,14 @@
 module EmbeddedMongo
   class DB < Mongo::DB
+    # verbatim
+    def rename_collection(from, to)
+      oh = BSON::OrderedHash.new
+      oh[:renameCollection] = "#{@name}.#{from}"
+      oh[:to] = "#{@name}.#{to}"
+      doc = DB.new('admin', @connection).command(oh, :check_response => false)
+      ok?(doc) || raise(MongoDBError, "Error renaming collection: #{doc.inspect}")
+    end
+
     # mostly verbatim
     def command(selector, opts={})
       check_response = opts.fetch(:check_response, true)

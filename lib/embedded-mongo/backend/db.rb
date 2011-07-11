@@ -1,5 +1,7 @@
 module EmbeddedMongo::Backend
   class DB
+    attr_reader :collections, :name
+
     def initialize(manager, name)
       raise ArgumentError.new("Invalid collection name #{name.inspect}") if name['.'] or name['$']
       @manager = manager
@@ -16,11 +18,21 @@ module EmbeddedMongo::Backend
            'dropped' => @name,
            'ok' => 1.0
          }]
+      elsif collection_name = cmd['drop']
+        @collections.delete(collection_name)
+        [{
+           'ok' => 1.0
+         }]
+      elsif collection_name = cmd['create']
+        get_collection(collection_name)
+        [{
+           'ok' => 1.0
+         }]
       elsif cmd['buildinfo']
         raise "Command #{cmd.inspect} only allowed for admin database" unless @name == 'admin'
         # {"version"=>"1.6.3", "gitVersion"=>"nogitversion", "sysInfo"=>"Linux allspice 2.6.24-28-server #1 SMP Wed Aug 18 21:17:51 UTC 2010 x86_64 BOOST_LIB_VERSION=1_42", "bits"=>64, "debug"=>false, "ok"=>1.0}
         [{
-           'version' => '0.0.1',
+           'version' => '1.8.0', # sure, this seems like a good version (must exceed 1.1.3)
            'gitVersion' => 'nogitversion',
            'sysInfo' => 'fake sysinfo',
            'bits' => 64,
@@ -44,6 +56,7 @@ module EmbeddedMongo::Backend
       }.merge(opts)
     end
 
+    # TODO: don't think we always create a collection
     def get_collection(collection_name)
       @collections[collection_name] ||= Collection.new(self, collection_name)
     end

@@ -4,10 +4,15 @@ module EmbeddedMongo::Backend
 
     def initialize(db, name)
       # TODO: system.namespaces
-      raise ArgumentError.new("Invalid collection name #{name.inspect}") if name['.'] or name['$']
       @db = db
       @name = name
       @data = []
+
+      if name == 'system.namespaces'
+        # mark as system?
+      elsif name['.'] or name['$']
+        raise ArgumentError.new("Invalid collection name #{name.inspect}")
+      end
     end
 
     def insert_documents(documents)
@@ -21,7 +26,7 @@ module EmbeddedMongo::Backend
       raise ArgumentError.new("Unrecognized opts: #{opts.inspect}") unless opts.empty?
 
       results = []
-      @data.each do |doc|
+      data.each do |doc|
         if selector_match?(selector, doc)
           results << doc
           break if limit > 0 and results.length >= limit
@@ -30,7 +35,14 @@ module EmbeddedMongo::Backend
 
       EmbeddedMongo.log.info("Query has #{results.length} matches")
       if sort
-        sort = [sort] unless sort.first.kind_of?(Array)
+        case sort
+        when String
+          sort = [[sort]]
+        when Array
+          sort = [sort] unless sort.first.kind_of?(Array)
+        else
+          raise Mongo::InvalidSortValueError.new("invalid sort type: #{sort.inspect}")
+        end
         results.sort! { |x, y| sort_cmp(sort, x, y) }
       end
       results
@@ -67,6 +79,14 @@ module EmbeddedMongo::Backend
 
     private
 
+    def data
+      if @name == 'system.namespaces'
+        @db.collections.keys.map { |name| { 'name' => "#{@db.name}.#{name}" } }
+      else
+        @data
+      end
+    end
+
     def check_id(doc)
       id = doc['_id']
       raise NotImplementedError.new("#{doc.inspect} has no '_id' attribute") unless id
@@ -90,10 +110,20 @@ module EmbeddedMongo::Backend
     end
 
     def sort_cmp(sort, x, y)
-      sort.each do |field, direction|
+      sort.each do |spec|
+        case spec
+        when String
+          field = spec
+          direction = nil
+        when Array
+          field, direction = spec
+        else
+          raise Mongo::InvalidSortValueError.new("invalid sort directive: #{spec.inspect}")
+        end
+
         x_val = x[field.to_s]
         y_val = y[field.to_s]
-        if direction.to_s == 'ascending' or direction.to_s == 'asc' or (direction.kind_of?(Numeric) and direction > 0)
+        if direction.to_s == 'ascending' or direction.to_s == 'asc' or (direction.kind_of?(Numeric) and direction > 0) or direction.nil?
           if x_val.kind_of?(Numeric) and y_val.kind_of?(Numeric)
             cmp = x_val <=> y_val
           elsif x_val.kind_of?(Numeric)
