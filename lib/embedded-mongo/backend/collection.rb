@@ -90,15 +90,15 @@ module EmbeddedMongo::Backend
 
     def sort_cmp(sort, x, y)
       sort.each do |field, direction|
-        x_val = x[field]
-        y_val = y[field]
+        x_val = x[field.to_s]
+        y_val = y[field.to_s]
         if direction.to_s == 'ascending' or direction.to_s == 'asc'
           if x_val.kind_of?(Numeric) and y_val.kind_of?(Numeric)
             cmp = x_val <=> y_val
           elsif x_val.kind_of?(Numeric)
-            cmp = -1
-          elsif y_val.kind_of?(Numeric)
             cmp = 1
+          elsif y_val.kind_of?(Numeric)
+            cmp = -1
           else
             cmp = 0
           end
@@ -107,9 +107,9 @@ module EmbeddedMongo::Backend
           if x_val.kind_of?(Numeric) and y_val.kind_of?(Numeric)
             cmp = y_val <=> x_val
           elsif x_val.kind_of?(Numeric)
-            cmp = 1
-          elsif y_val.kind_of?(Numeric)
             cmp = -1
+          elsif y_val.kind_of?(Numeric)
+            cmp = 1
           else
             cmp = 0
           end

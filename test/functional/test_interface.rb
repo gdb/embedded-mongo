@@ -11,6 +11,7 @@ class InterfaceTest < Test::Unit::TestCase
 
     @test_db = @conn['test']
     @foo_collection = @test_db['foo']
+    @foo_collection.remove
   end
 
   def test_insert_and_find
@@ -51,5 +52,23 @@ class InterfaceTest < Test::Unit::TestCase
     cursor = @foo_collection.find({ '_id' => id2 })
     assert_equal(1, cursor.count)
     assert_equal({ '_id' => id2, 'lemon' => 'limit' }, cursor.first)
+  end
+
+  def test_sort
+    @foo_collection.insert({ 'a' => 10 })
+    @foo_collection.insert({ 'a' => 20 })
+    @foo_collection.insert({ 'b' => 'foo' })
+
+    cursor1 = @foo_collection.find.sort([['a', 'asc']])
+    res1 = cursor1.to_a
+    assert_equal(nil, res1[0]['a'])
+    assert_equal(10, res1[1]['a'])
+    assert_equal(20, res1[2]['a'])
+
+    cursor2 = @foo_collection.find.sort([['a', 'desc']])
+    res2 = cursor2.to_a
+    assert_equal(20, res2[0]['a'])
+    assert_equal(10, res2[1]['a'])
+    assert_equal(nil, res2[2]['a'])
   end
 end
