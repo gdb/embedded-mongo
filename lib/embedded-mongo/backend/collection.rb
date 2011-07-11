@@ -33,7 +33,7 @@ module EmbeddedMongo::Backend
         end
       end
 
-      EmbeddedMongo.log.info("Query has #{results.length} matches")
+      EmbeddedMongo.log.debug("Query has #{results.length} matches")
       if sort
         case sort
         when String
