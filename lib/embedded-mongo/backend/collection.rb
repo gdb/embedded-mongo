@@ -11,7 +11,7 @@ module EmbeddedMongo::Backend
     end
 
     def insert_documents(documents)
-      documents.each { |doc| insert(doc) }
+      documents.each { |doc| insert(EmbeddedMongo::Util.deep_clone(doc)) }
       documents.map { |doc| doc['_id'] }
     end
 
@@ -52,6 +52,7 @@ module EmbeddedMongo::Backend
       end
 
       if n == 0 and upsert
+        selector = EmbeddedMongo::Util.deep_clone(selector)
         apply_update!(update, selector)
         insert(selector)
         @db.set_last_error({ 'updatedExisting' => false, 'upserted' => update['_id'], 'n' => 1 })
@@ -75,6 +76,7 @@ module EmbeddedMongo::Backend
       raise DuplicateKeyError if @data.any? { |other| doc['_id'] == other['_id'] }
     end
 
+    # Make sure to clone at call sites
     def insert(doc)
       begin
         check_id(doc)
@@ -84,14 +86,14 @@ module EmbeddedMongo::Backend
         return
       end
 
-      @data << EmbeddedMongo::Util.deep_clone(doc)
+      @data << doc
     end
 
     def sort_cmp(sort, x, y)
       sort.each do |field, direction|
         x_val = x[field.to_s]
         y_val = y[field.to_s]
-        if direction.to_s == 'ascending' or direction.to_s == 'asc'
+        if direction.to_s == 'ascending' or direction.to_s == 'asc' or (direction.kind_of?(Numeric) and direction > 0)
           if x_val.kind_of?(Numeric) and y_val.kind_of?(Numeric)
             cmp = x_val <=> y_val
           elsif x_val.kind_of?(Numeric)
@@ -102,7 +104,7 @@ module EmbeddedMongo::Backend
             cmp = 0
           end
           return cmp if cmp != 0
-        elsif direction.to_s == 'descending' or direction.to_s == 'desc'
+        elsif direction.to_s == 'descending' or direction.to_s == 'desc' or (direction.kind_of?(Numeric) and direction < 0)
           if x_val.kind_of?(Numeric) and y_val.kind_of?(Numeric)
             cmp = y_val <=> x_val
           elsif x_val.kind_of?(Numeric)
@@ -128,7 +130,7 @@ module EmbeddedMongo::Backend
     def partial_match?(partial_selector, value)
       EmbeddedMongo.log.debug("partial_match? #{partial_selector.inspect} #{value.inspect}")
       case partial_selector
-      when Array, Numeric, String, BSON::ObjectId, TrueClass, FalseClass, nil
+      when Array, Numeric, String, BSON::ObjectId, TrueClass, FalseClass, Time, nil
         partial_selector == value
       when Hash
         if no_directive?(partial_selector)

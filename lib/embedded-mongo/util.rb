@@ -6,8 +6,18 @@ module EmbeddedMongo
     end
 
     def self.deep_clone(obj)
-      # TODO: come up with something less hackish
-      Marshal.load(Marshal.dump(obj))
+      case obj
+      when Hash
+        clone = {}
+        obj.each { |k, v| clone[deep_clone(k)] = deep_clone(v) }
+        clone
+      when Array
+        obj.map { |v| deep_clone(v) }
+      when Numeric
+        obj
+      else
+        obj.dup
+      end
     end
 
     private
@@ -23,7 +33,7 @@ module EmbeddedMongo
         struct.each_with_index { |entry, i| struct[i] = stringify!(entry) }
       when Symbol
         struct.to_s
-      when String, Numeric, BSON::ObjectId, Regexp, TrueClass, FalseClass, nil
+      when String, Numeric, BSON::ObjectId, Regexp, TrueClass, FalseClass, Time, nil
         struct
       else
         raise "Cannot stringify #{struct.inspect}"
