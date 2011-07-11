@@ -43,5 +43,12 @@ module EmbeddedMongo
         Collection.new(name, self)
       end
     end
+
+    # verbatim
+    def collections_info(coll_name=nil)
+      selector = {}
+      selector[:name] = full_collection_name(coll_name) if coll_name
+      Cursor.new(Collection.new(SYSTEM_NAMESPACE_COLLECTION, self), :selector => selector)
+    end
   end
 end

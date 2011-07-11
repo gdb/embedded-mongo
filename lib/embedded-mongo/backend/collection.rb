@@ -1,10 +1,9 @@
-# TODO: deep clone upon insert
-
 module EmbeddedMongo::Backend
   class Collection
     class DuplicateKeyError < StandardError; end
 
     def initialize(db, name)
+      # TODO: system.namespaces
       raise ArgumentError.new("Invalid collection name #{name.inspect}") if name['.'] or name['$']
       @db = db
       @name = name
@@ -85,7 +84,7 @@ module EmbeddedMongo::Backend
         return
       end
 
-      @data << doc
+      @data << EmbeddedMongo::Util.deep_clone(doc)
     end
 
     def sort_cmp(sort, x, y)
@@ -129,7 +128,7 @@ module EmbeddedMongo::Backend
     def partial_match?(partial_selector, value)
       EmbeddedMongo.log.debug("partial_match? #{partial_selector.inspect} #{value.inspect}")
       case partial_selector
-      when Array, Numeric, String, BSON::ObjectId, Boolean, nil
+      when Array, Numeric, String, BSON::ObjectId, TrueClass, FalseClass, nil
         partial_selector == value
       when Hash
         if no_directive?(partial_selector)
@@ -172,21 +171,18 @@ module EmbeddedMongo::Backend
 
     def apply_update!(update, doc)
       EmbeddedMongo.log.info("Applying update: #{update.inspect} to #{doc.inspect}")
+      id = doc['_id']
       if no_directive?(update)
-        id = doc['_id']
         doc.clear
-        update.each do |k, v|
-          doc[k] = v
-        end
-        doc['_id'] ||= id
+        update.each { |k, v| doc[k] = v }
       else
         # TODO: should set_last_error to {"err"=>"Modifiers and non-modifiers cannot be mixed", "code"=>10154, "n"=>0, "ok"=>1.0}
         raise NotImplementedError.new("Modifiers and non-modifiers cannot be mixed #{update.inspect}") if has_non_directive?(update)
         update.each do |directive_key, directive_value|
           apply_update_directive!(directive_key, directive_value, doc)
         end
-        doc['_id'] ||= id
       end
+      doc['_id'] ||= id
     end
 
     def apply_update_directive!(directive_key, directive_value, doc)

@@ -1,9 +1,13 @@
 module EmbeddedMongo
   module Util
-    # TODO: make this recursive / stringify values
     def self.stringify_hash!(hash)
       raise ArgumentError.new("Argument is not a hash: #{hash.inspect}") unless hash.kind_of?(Hash)
       stringify!(hash)
+    end
+
+    def self.deep_clone(obj)
+      # TODO: come up with something less hackish
+      Marshal.load(Marshal.dump(obj))
     end
 
     private
@@ -19,7 +23,7 @@ module EmbeddedMongo
         struct.each_with_index { |entry, i| struct[i] = stringify!(entry) }
       when Symbol
         struct.to_s
-      when String, Numeric, BSON::ObjectId, Regexp, Boolean, nil
+      when String, Numeric, BSON::ObjectId, Regexp, TrueClass, FalseClass, nil
         struct
       else
         raise "Cannot stringify #{struct.inspect}"
