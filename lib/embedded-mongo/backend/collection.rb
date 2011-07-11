@@ -26,11 +26,25 @@ module EmbeddedMongo::Backend
     end
 
     def update(selector, update, opts)
+      # TODO: return value?
+      multi = opts.delete(:multi)
+      upsert = opts.delete(:upsert)
+      safe = opts.delete(:safe) # TODO: do something with this
+      raise ArgumentError.new("Unrecognized opts: #{opts.inspect}") unless opts.empty?
 
+      n = 0
       @data.each do |doc|
         next unless selector_match?(selector, doc)
         apply_update!(update, doc)
-        break unless opts[:multi]
+        n += 1
+        break unless multi
+      end
+
+      if n == 0 and upsert
+        insert(update)
+        @db.set_last_error({ 'updatedExisting' => false, 'upserted' => update['_id'], 'n' => 1 })
+      else
+        @db.set_last_error({ 'updatedExisting' => n > 0, 'n' => n })
       end
     end
 
@@ -69,7 +83,7 @@ module EmbeddedMongo::Backend
     def partial_match?(partial_selector, value)
       EmbeddedMongo.log.debug("partial_match? #{partial_selector.inspect} #{value.inspect}")
       case partial_selector
-      when Array, String, BSON::ObjectId, nil
+      when Array, Numeric, String, BSON::ObjectId, Boolean, nil
         partial_selector == value
       when Hash
         if partial_selector.all? { |k, v| !k.start_with?('$') }
@@ -102,6 +116,8 @@ module EmbeddedMongo::Backend
       when '$in'
         raise NotImplementedError.new("Only implemented for arrays: #{directive_value.inspect}") unless directive_value.kind_of?(Array)
         directive_value.include?(value)
+      when '$ne'
+        directive_value != value
       else
         raise NotImplementedError.new("Have yet to implement: #{directive_key}")
         # raise Mongo::OperationFailure.new("invalid operator: #{directive_key}")

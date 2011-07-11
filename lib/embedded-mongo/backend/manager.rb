@@ -26,7 +26,7 @@ module EmbeddedMongo::Backend
     def update(db_name, collection_name, selector, update, opts)
       EmbeddedMongo::Util.stringify_hash!(selector)
       EmbeddedMongo::Util.stringify_hash!(update)
-      EmbeddedMongo.log.info("FIND: #{db_name.inspect} #{collection_name.inspect} #{selector.inspect} #{update.inspect} #{opts.inspect}")
+      EmbeddedMongo.log.info("UPDATE: #{db_name.inspect} #{collection_name.inspect} #{selector.inspect} #{update.inspect} #{opts.inspect}")
       collection = get_collection(db_name, collection_name)
       collection.update(selector, update, opts)
     end

@@ -19,7 +19,7 @@ module EmbeddedMongo
         struct.each_with_index { |entry, i| struct[i] = stringify!(entry) }
       when Symbol
         struct.to_s
-      when String, Integer, BSON::ObjectId, nil
+      when String, Numeric, BSON::ObjectId, Regexp, Boolean, nil
         struct
       else
         raise "Cannot stringify #{struct.inspect}"

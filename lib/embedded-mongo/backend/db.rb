@@ -6,8 +6,7 @@ module EmbeddedMongo::Backend
       @name = name
       @collections = {}
 
-      @last_error = nil
-      @n = 0
+      set_last_error({})
     end
 
     def run_command(cmd)
@@ -29,17 +28,20 @@ module EmbeddedMongo::Backend
            'ok' => 1.0
          }]
       elsif cmd['getlasterror']
-        # TODO: populate @last_error / @n
-        [{
-           'err' => @last_error,
-           'n' => @n,
-           'ok' => 1.0
-         }]
+        [@last_error]
       elsif cmd.has_key?('$eval')
         raise NotImplementedError.new('Does not currently support $eval commands')
       else
         raise NotImplementedError.new("Unrecognized command #{cmd.inspect}")
       end
+    end
+
+    def set_last_error(opts)
+      @last_error = {
+        'err' => nil,
+        'n' => 0,
+        'ok' => 1.0
+      }.merge(opts)
     end
 
     def get_collection(collection_name)
