@@ -11,7 +11,7 @@ module EmbeddedMongo::Backend
 
     def run_command(cmd)
       if cmd['dropDatabase']
-        @manager.drop_db($name)
+        @manager.drop_db(@name)
         [{
            'dropped' => @name,
            'ok' => 1.0

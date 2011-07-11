@@ -8,7 +8,7 @@ module EmbeddedMongo
   def self.log
     unless @log
       @log = Logger.new(STDOUT)
-      @log.level = Logger::DEBUG
+      @log.level = Logger::WARN
     end
     @log
   end

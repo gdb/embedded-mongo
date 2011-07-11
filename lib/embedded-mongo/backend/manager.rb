@@ -12,7 +12,7 @@ module EmbeddedMongo::Backend
       collection.insert_documents(documents)
     end
 
-    def find(db_name, collection_name, selector)
+    def find(db_name, collection_name, selector, opts)
       EmbeddedMongo::Util.stringify_hash!(selector)
       EmbeddedMongo.log.info("FIND: #{db_name.inspect} #{collection_name.inspect} #{selector.inspect}")
       if collection_name == '$cmd'
@@ -20,7 +20,7 @@ module EmbeddedMongo::Backend
         return db.run_command(selector)
       end
       collection = get_collection(db_name, collection_name)
-      collection.find(selector)
+      collection.find(selector, opts)
     end
 
     def update(db_name, collection_name, selector, update, opts)

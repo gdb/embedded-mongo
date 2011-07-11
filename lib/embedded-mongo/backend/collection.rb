@@ -16,10 +16,16 @@ module EmbeddedMongo::Backend
       documents.map { |doc| doc['_id'] }
     end
 
-    def find(selector)
+    def find(selector, opts)
+      limit = opts.delete(:limit)
+      raise ArgumentError.new("Unrecognized opts: #{opts.inspect}") unless opts.empty?
+
       results = []
       @data.each do |doc|
-        results << doc if selector_match?(selector, doc)
+        if selector_match?(selector, doc)
+          results << doc
+          break if limit > 0 and results.length >= limit
+        end
       end
       EmbeddedMongo.log.info("Query has #{results.length} matches")
       results
