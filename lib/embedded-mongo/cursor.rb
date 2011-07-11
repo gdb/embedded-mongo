@@ -8,7 +8,8 @@ module EmbeddedMongo
       if @query_run
         false
       else
-        results = @connection.request(:find, @db.name, @collection.name, selector, :limit => @limit)
+        results = @connection.request(:find, @db.name, @collection.name, selector,
+                                      :limit => @limit, :sort => @order)
         @returned += results.length
         @cache += results
         @query_run = true

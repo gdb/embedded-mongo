@@ -18,6 +18,7 @@ module EmbeddedMongo::Backend
 
     def find(selector, opts)
       limit = opts.delete(:limit)
+      sort = opts.delete(:sort)
       raise ArgumentError.new("Unrecognized opts: #{opts.inspect}") unless opts.empty?
 
       results = []
@@ -27,7 +28,12 @@ module EmbeddedMongo::Backend
           break if limit > 0 and results.length >= limit
         end
       end
+
       EmbeddedMongo.log.info("Query has #{results.length} matches")
+      if sort
+        sort = [sort] unless sort.first.kind_of?(Array)
+        results.sort! { |x, y| sort_cmp(sort, x, y) }
+      end
       results
     end
 
@@ -79,6 +85,39 @@ module EmbeddedMongo::Backend
       end
 
       @data << doc
+    end
+
+    def sort_cmp(sort, x, y)
+      sort.each do |field, direction|
+        x_val = x[field]
+        y_val = y[field]
+        if direction.to_s == 'ascending' or direction.to_s == 'asc'
+          if x_val.kind_of?(Numeric) and y_val.kind_of?(Numeric)
+            cmp = x_val <=> y_val
+          elsif x_val.kind_of?(Numeric)
+            cmp = -1
+          elsif y_val.kind_of?(Numeric)
+            cmp = 1
+          else
+            cmp = 0
+          end
+          return cmp if cmp != 0
+        elsif direction.to_s == 'descending' or direction.to_s == 'desc'
+          if x_val.kind_of?(Numeric) and y_val.kind_of?(Numeric)
+            cmp = y_val <=> x_val
+          elsif x_val.kind_of?(Numeric)
+            cmp = 1
+          elsif y_val.kind_of?(Numeric)
+            cmp = -1
+          else
+            cmp = 0
+          end
+          return cmp if cmp != 0
+        else
+          raise NotImplementedError.new("Unrecognized sort [field, direction] = [#{field.inspect}, #{direction.inspect}] (full spec #{sort.inspect}")
+        end
+      end
+      0
     end
 
     def selector_match?(selector, doc)
