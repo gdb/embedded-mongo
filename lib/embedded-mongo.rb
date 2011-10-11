@@ -14,6 +14,7 @@ module EmbeddedMongo
   end
 end
 
+require "embedded-mongo/version"
 require 'embedded-mongo/backend'
 require 'embedded-mongo/backend/collection'
 require 'embedded-mongo/backend/db'
