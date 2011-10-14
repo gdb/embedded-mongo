@@ -1,8 +1,8 @@
 module EmbeddedMongo
   class Collection < Mongo::Collection
-    def insert_documents(documents, collection_name=@name, check_keys=true, safe=false)
+    def insert_documents(documents, collection_name=@name, check_keys=true, safe=false, opts={})
       # TODO: do something with check_keys / safe
-      EmbeddedMongo.log.debug("insert_documents: #{documents.inspect}, #{collection_name.inspect}, #{check_keys.inspect}, #{safe.inspect}")
+      EmbeddedMongo.log.debug("insert_documents: #{documents.inspect}, #{collection_name.inspect}, #{check_keys.inspect}, #{safe.inspect}, #{opts.inspect}")
       @connection.request(:insert_documents, @db.name, collection_name, documents)
     end
 
