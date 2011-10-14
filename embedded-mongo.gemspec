@@ -29,4 +29,7 @@ Gem::Specification.new do |s|
   # s.add_development_dependency "rspec"
   # s.add_runtime_dependency "rest-client"
   s.add_runtime_dependency "mongo"
+  s.add_development_dependency 'shoulda'
+  s.add_development_dependency 'mocha'
+  s.add_development_dependency 'rake'
 end
