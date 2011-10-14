@@ -6,17 +6,17 @@ module EmbeddedMongo
     end
 
     def connect
-      puts "Connecting to #{@host_to_try.inspect}"
+      EmbeddedMongo.log.debug "Connecting to #{@host_to_try.inspect}"
       @backend = Backend.connect_backend(@host_to_try)
     end
 
     def send_message(operation, message, log_message=nil)
-      puts "Calling send_message with: #{operation.inspect}, #{message.inspect}, #{log_message.inspect}"
+      EmbeddedMongo.log.debug "Calling send_message with: #{operation.inspect}, #{message.inspect}, #{log_message.inspect}"
       raise "send_message"
     end
 
     def receive_message(operation, message, log_message=nil, socket=nil, command=false)
-      puts "Calling receive_message with: #{operation.inspect}, #{message.inspect}, #{log_message.inspect}, #{command.inspect}"
+      EmbeddedMongo.log.debug "Calling receive_message with: #{operation.inspect}, #{message.inspect}, #{log_message.inspect}, #{command.inspect}"
       raise "receive_message"
     end
 
