@@ -220,28 +220,48 @@ module EmbeddedMongo::Backend
     def apply_update_directive!(directive_key, directive_value, doc)
       case directive_key
       when '$set'
-        directive_value.each { |k, v| doc[k] = v }
+        directive_value.each { |k, v| deep_doc,key = deep( doc, k, true ); deep_doc[key]=v }
       when '$unset'
-        directive_value.each { |k,v| doc.delete(k);nil }
+        directive_value.each { |k,v| deep_doc,key = deep( doc, k ); (deep_doc.delete(key) rescue nil); nil }
       when '$push', '$pop', '$addToSet'
         directive_value.each do |k,v|
-          raise Mongo::OperationFailure, 'Not An Array' if doc.has_key?(k) and !doc[k].is_a?(Array)
-          doc[k] = [] unless doc.has_key?(k)
+          deep_doc,key = deep( doc, k, true )
+          raise Mongo::OperationFailure, 'Not An Array' if deep_doc.has_key?(key) and !deep_doc[key].is_a?(Array)
+          deep_doc[key] = [] unless deep_doc.has_key?(key)
           case directive_key
-          when '$push' then doc[k].push(v)
+          when '$push' then deep_doc[key].push(v)
           when '$pop'
             if v > 0
-              doc[k].pop
+              deep_doc[key].pop
             else
-              doc[k].shift
+              deep_doc[key].shift
             end
           when '$addToSet'
-            doc[k].push(v) unless doc[k].include?(v)
+            deep_doc[key].push(v) unless deep_doc[key].include?(v)
           end
         end
       else
         raise NotImplementedError.new("Have yet to implement updating: #{directive_key}")
       end
+    end
+
+    # enable the use of multipart keys e.g. 'stats.1984-04-14'
+    # returns a tuple: [deep_doc,singlepert_key]
+    # given:   [doc, 'stats.1984-04-14']
+    # returns: [doc['stats'], '1984-04-14']
+    def deep(doc,key, create=false)
+      key = key.split('.') unless key.is_a?(Array)
+      while key.size > 1
+        current_key = key.shift
+        unless doc.has_key?(current_key)
+          if create then doc[current_key] = Hash.new
+          else return nil
+          end
+        end
+        raise Mongo::OperationFailure, 'Cannot descend into an existing object that is not a hash' unless doc[current_key].is_a?(Hash)
+        doc = doc[current_key]
+      end
+      return [doc, key.last]
     end
 
     def has_non_directive?(document)

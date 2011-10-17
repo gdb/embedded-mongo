@@ -84,10 +84,15 @@ class InterfaceTest < Test::Unit::TestCase
     })
     
     assert_contained ({'a'=>20,'b'=>100,'c'=>60}), @foo_collection.find_one({'a'=>20})
+
+    @foo_collection.update({'a'=>20},{
+      '$set'=>{'stats.today'=>100}
+    })
+    assert_contained ({'stats'=>{'today'=>100}}), @foo_collection.find_one({'a'=>20})
   end
 
   def test_update_unset
-    @foo_collection.insert({'a'=>20,'b'=>40,'c'=>60})
+    @foo_collection.insert({'a'=>20,'b'=>40,'c'=>60,'d'=>{'e'=>30,'f'=>57}})
     @foo_collection.update({'a'=>20},{
       '$unset'=>{'b'=>1}
     })
@@ -95,6 +100,12 @@ class InterfaceTest < Test::Unit::TestCase
     assert_not_nil @foo_collection.find_one({'a'=>20})
     assert_not_contained ({'b'=>40}), @foo_collection.find_one({'a'=>20})
     assert_contained ({'a'=>20,'c'=>60}), @foo_collection.find_one({'a'=>20})
+
+    @foo_collection.update({'a'=>20},{
+      '$unset'=>{'d.e'=>1}
+    })
+    assert_not_contained ({'d'=>{'e'=>30}}), @foo_collection.find_one({'a'=>20})
+    assert_contained ({'d'=>{'f'=>57}}), @foo_collection.find_one({'a'=>20})
   end
 
   def test_update_push
@@ -112,6 +123,16 @@ class InterfaceTest < Test::Unit::TestCase
         '$push'=>{'c'=>10}
       })
     end
+
+    @foo_collection.update({'a'=>20},{
+      '$push'=>{'g.h.i'=>5}
+    })
+    assert_contained ({'g'=>{'h'=>{'i'=>[5]}}}), @foo_collection.find_one({'a'=>20})
+    @foo_collection.update({'a'=>20},{
+      '$push'=>{'g.h.i'=>4}
+    })
+    assert_contained ({'g'=>{'h'=>{'i'=>[5,4]}}}), @foo_collection.find_one({'a'=>20})
+
   end
 
   def test_update_pop
