@@ -223,6 +223,22 @@ module EmbeddedMongo::Backend
         directive_value.each { |k, v| doc[k] = v }
       when '$unset'
         directive_value.each { |k,v| doc.delete(k);nil }
+      when '$push', '$pop', '$addToSet'
+        directive_value.each do |k,v|
+          raise Mongo::OperationFailure, 'Not An Array' if doc.has_key?(k) and !doc[k].is_a?(Array)
+          doc[k] = [] unless doc.has_key?(k)
+          case directive_key
+          when '$push' then doc[k].push(v)
+          when '$pop'
+            if v > 0
+              doc[k].pop
+            else
+              doc[k].shift
+            end
+          when '$addToSet'
+            doc[k].push(v) unless doc[k].include?(v)
+          end
+        end
       else
         raise NotImplementedError.new("Have yet to implement updating: #{directive_key}")
       end
