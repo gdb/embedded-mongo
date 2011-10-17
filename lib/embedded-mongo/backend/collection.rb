@@ -221,6 +221,8 @@ module EmbeddedMongo::Backend
       case directive_key
       when '$set'
         directive_value.each { |k, v| doc[k] = v }
+      when '$unset'
+        directive_value.each { |k,v| doc.delete(k);nil }
       else
         raise NotImplementedError.new("Have yet to implement updating: #{directive_key}")
       end
