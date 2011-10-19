@@ -31,6 +31,48 @@ class InterfaceTest < Test::Unit::TestCase
     assert_equal({ '_id' => id, 'test' => 'tar'}, cursor.first)
   end
 
+  def test_update_upsert_record_not_present
+    selector = {'schubar'=>'mubar'}
+    @foo_collection.update(
+      selector,
+      {'$set'=>{'baz'=>'bingo'}},
+      :upsert => true
+    )
+    cursor = @foo_collection.find(selector)
+    assert_equal 1, cursor.count
+    entry = cursor.first
+    assert_equal 'bingo', (entry['baz'] rescue nil)
+  end
+
+  def test_update_upsert_record_present
+    selector = {'fubar'=>'rubar'}
+    @foo_collection.insert(
+      selector.merge('tweedle'=>'dee')
+    )
+    @foo_collection.update(
+      selector,
+      {'$set'=>{'baz'=>'bingo'}},
+      :upsert => true
+    )
+    cursor = @foo_collection.find(selector)
+    assert_equal 1, cursor.count
+    entry = cursor.first
+    assert_equal 'bingo', (entry['baz'] rescue nil), 'failed to set new value'
+    assert_equal 'dee', (entry['tweedle'] rescue nil), 'overwrote unrelated value in record'
+  end
+
+  def test_update_upsert_record_with_id
+    @foo_collection.update(
+      {'foo' => 'bart','_id'=>0xdeadbeef},
+      {'$set'=>{'baz'=>'bingo'}},
+      :upsert => true
+    )
+    cursor = @foo_collection.find({ 'foo' => 'bart' })
+    assert_equal 1, cursor.count
+    entry = cursor.first
+    assert_equal 0xdeadbeef, (entry['_id'] rescue nil), 'overwrote id'
+  end
+
   def test_changing_ids
     id = @foo_collection.insert({ 'zing' => 'zong' })
     @foo_collection.update({ '_id' => id }, { '_id' => 'other_id' })

@@ -65,6 +65,7 @@ module EmbeddedMongo::Backend
 
       if n == 0 and upsert
         selector = EmbeddedMongo::Util.deep_clone(selector)
+        selector['_id'] ||= BSON::ObjectId.new
         apply_update!(update, selector)
         insert(selector)
         @db.set_last_error({ 'updatedExisting' => false, 'upserted' => update['_id'], 'n' => 1 })
