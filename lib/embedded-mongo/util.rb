@@ -13,7 +13,7 @@ module EmbeddedMongo
         clone
       when Array
         obj.map { |v| deep_clone(v) }
-      when Numeric
+      when Numeric, true, false, nil
         obj
       else
         obj.dup
