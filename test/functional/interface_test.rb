@@ -113,4 +113,120 @@ class InterfaceTest < Test::Unit::TestCase
     assert_equal(10, res2[1]['a'])
     assert_equal(nil, res2[2]['a'])
   end
+
+  def test_update_set
+    @foo_collection.insert({'a'=>20,'b'=>40})
+    @foo_collection.update({'a'=>20},{
+      '$set'=>{'c'=>60}
+    })
+    assert_contained ({'a'=>20,'b'=>40,'c'=>60}), @foo_collection.find_one({'a'=>20})
+
+    @foo_collection.update({'a'=>20},{
+      '$set'=>{'b'=>100}
+    })
+    
+    assert_contained ({'a'=>20,'b'=>100,'c'=>60}), @foo_collection.find_one({'a'=>20})
+
+    @foo_collection.update({'a'=>20},{
+      '$set'=>{'stats.today'=>100}
+    })
+    assert_contained ({'stats'=>{'today'=>100}}), @foo_collection.find_one({'a'=>20})
+  end
+
+  def test_update_unset
+    @foo_collection.insert({'a'=>20,'b'=>40,'c'=>60,'d'=>{'e'=>30,'f'=>57}})
+    @foo_collection.update({'a'=>20},{
+      '$unset'=>{'b'=>1}
+    })
+
+    assert_not_nil @foo_collection.find_one({'a'=>20})
+    assert_not_contained ({'b'=>40}), @foo_collection.find_one({'a'=>20})
+    assert_contained ({'a'=>20,'c'=>60}), @foo_collection.find_one({'a'=>20})
+
+    @foo_collection.update({'a'=>20},{
+      '$unset'=>{'d.e'=>1}
+    })
+    assert_not_contained ({'d'=>{'e'=>30}}), @foo_collection.find_one({'a'=>20})
+    assert_contained ({'d'=>{'f'=>57}}), @foo_collection.find_one({'a'=>20})
+  end
+
+  def test_update_push
+    @foo_collection.insert({'a'=>20,'c'=>60})
+    @foo_collection.update({'a'=>20},{
+      '$push'=>{'b'=>5}
+    })
+    assert_contained ({'a'=>20,'b'=>[5]}), @foo_collection.find_one({'a'=>20})
+    @foo_collection.update({'a'=>20},{
+      '$push'=>{'b'=>10}
+    })
+    assert_contained ({'a'=>20,'b'=>[5,10]}), @foo_collection.find_one({'a'=>20})
+    assert_raise Mongo::OperationFailure do
+      @foo_collection.update({'a'=>20},{
+        '$push'=>{'c'=>10}
+      })
+    end
+
+    @foo_collection.update({'a'=>20},{
+      '$push'=>{'g.h.i'=>5}
+    })
+    assert_contained ({'g'=>{'h'=>{'i'=>[5]}}}), @foo_collection.find_one({'a'=>20})
+    @foo_collection.update({'a'=>20},{
+      '$push'=>{'g.h.i'=>4}
+    })
+    assert_contained ({'g'=>{'h'=>{'i'=>[5,4]}}}), @foo_collection.find_one({'a'=>20})
+
+  end
+
+  def test_update_pop
+    @foo_collection.insert({'a'=>20,'b'=>12,'c'=>[5,10,15,20]})
+    @foo_collection.update({'a'=>20},{
+      '$pop'=>{'c'=>1}
+    })
+    assert_contained ({'a'=>20,'c'=>[5,10,15]}), @foo_collection.find_one({'a'=>20})
+    @foo_collection.update({'a'=>20},{
+      '$pop'=>{'c'=>-1}
+    })
+    assert_contained ({'a'=>20,'c'=>[10,15]}), @foo_collection.find_one({'a'=>20})
+
+    assert_raise Mongo::OperationFailure do
+      @foo_collection.update({'a'=>20},{
+        '$pop'=>{'b'=>1}
+      })
+    end
+  end
+
+  def test_update_add_to_set
+    @foo_collection.insert({'a'=>20,'b'=>12,'c'=>[5,10,15,20]})
+    @foo_collection.update({'a'=>20},{
+      '$addToSet'=>{'c'=>25}
+    })
+    assert_contained ({'a'=>20,'c'=>[5,10,15,20,25]}), @foo_collection.find_one({'a'=>20})
+    
+    @foo_collection.update({'a'=>20},{
+      '$addToSet'=>{'c'=>5}
+    })
+    assert_contained ({'a'=>20,'c'=>[5,10,15,20,25]}), @foo_collection.find_one({'a'=>20})
+
+  end
+
+  # ensure that hsh1 is contained in hsh2
+  def assert_contained hsh1, hsh2, additional_message=nil
+    contained, msg = catch :contained do
+        hsh1.each do |k,v|
+          throw :contained, [false,"missing key <#{k}>"] unless hsh2.has_key? k
+          unless v == hsh2[k]
+            throw :contained, [false,"mismatch entry for <#{k}>:\nexpect:<#{v.inspect}>\nactual:<#{hsh2[k].inspect}>"]
+          end
+        end
+        throw :contained, [true]
+      end
+    assert contained, [additional_message,msg].compact.join("\n")
+  end
+
+  def assert_not_contained hsh1, hsh2, msg=nil
+    fail_message = [msg,"expected was contained in actual:\ne:<#{hsh1.inspect}>\na:<#{hsh2.inspect}>"].compact.join("\n")
+    assert_raise Test::Unit::AssertionFailedError, fail_message do
+      assert_contained hsh1, hsh2
+    end
+  end
 end
