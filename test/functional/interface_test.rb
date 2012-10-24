@@ -61,6 +61,21 @@ class InterfaceTest < Test::Unit::TestCase
     assert_equal 'dee', (entry['tweedle'] rescue nil), 'overwrote unrelated value in record'
   end
 
+  def test_update_increment_record_field
+    selector = {'fubar'=>'rubar'}
+    @foo_collection.insert(
+      selector.merge('baz'=>1)
+    )
+    @foo_collection.update(
+      selector,
+      {'$inc'=>{'baz'=>2}}
+    )
+    cursor = @foo_collection.find(selector)
+    assert_equal 1, cursor.count
+    entry = cursor.first
+    assert_equal 3, (entry['baz'] rescue nil), 'failed to increment value'
+  end
+
   def test_update_upsert_record_with_id
     @foo_collection.update(
       {'foo' => 'bart','_id'=>0xdeadbeef},

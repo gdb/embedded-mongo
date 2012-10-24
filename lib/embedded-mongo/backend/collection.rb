@@ -222,6 +222,8 @@ module EmbeddedMongo::Backend
       case directive_key
       when '$set'
         directive_value.each { |k, v| doc[k] = v }
+      when '$inc'
+        directive_value.each { |k, v| doc[k] += v }
       else
         raise NotImplementedError.new("Have yet to implement updating: #{directive_key}")
       end
