@@ -4,6 +4,7 @@ require 'test/unit'
 require File.join(File.dirname(__FILE__), '../../lib/embedded-mongo')
 
 class InterfaceTest < Test::Unit::TestCase
+  include Mongo
   def setup
     # Tests should pass with either of the following lines
     @conn = EmbeddedMongo::Connection.new
@@ -59,6 +60,35 @@ class InterfaceTest < Test::Unit::TestCase
     entry = cursor.first
     assert_equal 'bingo', (entry['baz'] rescue nil), 'failed to set new value'
     assert_equal 'dee', (entry['tweedle'] rescue nil), 'overwrote unrelated value in record'
+  end
+
+  def test_update_increment_record_field
+    selector = {'fubar'=>'rubar'}
+    @foo_collection.insert(
+      selector.merge('baz'=>1)
+    )
+    @foo_collection.update(
+      selector,
+      {'$inc'=>{'baz'=>2}}
+    )
+    cursor = @foo_collection.find(selector)
+    assert_equal 1, cursor.count
+    entry = cursor.first
+    assert_equal 3, (entry['baz'] rescue nil), 'failed to increment value'
+  end
+
+  def test_update_increment_record_field_with_incorrect_type
+    selector = {'fubar'=>'rubar'}
+    @foo_collection.insert(
+      selector.merge('baz'=>'not an integer')
+    )
+
+    assert_raise OperationFailure do
+      @foo_collection.update(
+        selector,
+        {'$inc'=>{'baz'=>2}}
+      )
+    end
   end
 
   def test_update_upsert_record_with_id
