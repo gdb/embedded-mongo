@@ -224,7 +224,10 @@ module EmbeddedMongo::Backend
         directive_value.each { |k, v| doc[k] = v }
       when '$inc'
         directive_value.each do |k, v|
-          raise Mongo::OperationFailure.new("Cannot apply $inc modifier to non-number: #{k}=#{doc[k].inspect}") unless doc[k].kind_of?(Numeric)
+          unless doc[k].kind_of?(Numeric)
+            raise Mongo::OperationFailure.new("Cannot apply $inc modifier to non-number", 10140)
+          end
+
           doc[k] += v
         end
       else
