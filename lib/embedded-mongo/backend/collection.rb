@@ -222,6 +222,11 @@ module EmbeddedMongo::Backend
       case directive_key
       when '$set'
         directive_value.each { |k, v| doc[k] = v }
+      when '$inc'
+        directive_value.each do |k, v|
+          raise Mongo::OperationFailure.new("Cannot apply $inc modifier to non-number: #{k}=#{doc[k].inspect}") unless doc[k].kind_of?(Numeric)
+          doc[k] += v
+        end
       else
         raise NotImplementedError.new("Have yet to implement updating: #{directive_key}")
       end
