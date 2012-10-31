@@ -30,9 +30,9 @@ module EmbeddedMongo::Backend
          }]
       elsif cmd['buildinfo']
         raise "Command #{cmd.inspect} only allowed for admin database" unless @name == 'admin'
-        # {"version"=>"1.6.3", "gitVersion"=>"nogitversion", "sysInfo"=>"Linux allspice 2.6.24-28-server #1 SMP Wed Aug 18 21:17:51 UTC 2010 x86_64 BOOST_LIB_VERSION=1_42", "bits"=>64, "debug"=>false, "ok"=>1.0}
+        # {"ok"=>1, "debug"=>false, "bits"=>64, "versionArray"=>[2, 0, 4, 0], "version"=>"2.0.4", "maxBsonObjectSize"=>16777216, "sysInfo"=>"Linux yellow 2.6.24-29-server #1 SMP Tue Oct 11 15:57:27 UTC 2011 x86_64 BOOST_LIB_VERSION=1_46_1", "gitVersion"=>"nogitversion"}
         [{
-           'version' => '1.8.0', # sure, this seems like a good version (must exceed 1.1.3)
+           'version' => '2.0.4.0', # sure, this seems like a good version
            'gitVersion' => 'nogitversion',
            'sysInfo' => 'fake sysinfo',
            'bits' => 64,
