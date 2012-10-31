@@ -4,7 +4,6 @@ require 'test/unit'
 require File.join(File.dirname(__FILE__), '../../lib/embedded-mongo')
 
 class InterfaceTest < Test::Unit::TestCase
-  include Mongo
   def setup
     # Tests should pass with either of the following lines
     @conn = EmbeddedMongo::Connection.new
@@ -83,7 +82,7 @@ class InterfaceTest < Test::Unit::TestCase
       selector.merge('baz'=>'not an integer')
     )
 
-    assert_raise OperationFailure do
+    assert_raise(Mongo::OperationFailure) do
       @foo_collection.update(
         selector,
         {'$inc'=>{'baz'=>2}}
