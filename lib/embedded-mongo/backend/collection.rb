@@ -171,7 +171,11 @@ module EmbeddedMongo::Backend
       EmbeddedMongo.log.debug("partial_match? #{partial_selector.inspect} #{value.inspect}")
       case partial_selector
       when Array, Numeric, String, BSON::ObjectId, TrueClass, FalseClass, Time, nil
-        partial_selector == value
+        if value.kind_of? Array then
+          value.include? partial_selector
+        else
+          partial_selector == value
+        end
       when Hash
         if no_directive?(partial_selector)
           partial_selector == value

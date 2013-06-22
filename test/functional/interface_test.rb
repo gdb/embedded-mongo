@@ -153,4 +153,15 @@ class InterfaceTest < Test::Unit::TestCase
     assert_equal(2, res1.length)
     p res1
   end
+
+  def test_for_in
+    @foo_collection.insert({'q'=>['der', 'dor']})
+    @foo_collection.insert({'q'=>['dar', 'dot']})
+    @foo_collection.insert({'q'=>['dot']})
+
+
+    cursor1 = @foo_collection.find({'q'=>'dot'})
+    res1 = cursor1.to_a
+    assert_equal(2, res1.length)
+  end
 end
