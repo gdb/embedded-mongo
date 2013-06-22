@@ -155,8 +155,17 @@ module EmbeddedMongo::Backend
 
     def selector_match?(selector, doc)
       raise NotImplementedError.new('Does not current support $where queries') if selector.has_key?('$where')
-      selector.all? { |k, v| partial_match?(v, doc[k]) }
+      selector.all? do |k, v|  
+        if(k == "$or") 
+          v.any? do |partial_selector| 
+            selector_match?(partial_selector, doc)
+          end
+        else
+          partial_match?(v, doc[k]) 
+        end
+      end
     end
+
 
     def partial_match?(partial_selector, value)
       EmbeddedMongo.log.debug("partial_match? #{partial_selector.inspect} #{value.inspect}")
@@ -170,7 +179,7 @@ module EmbeddedMongo::Backend
           raise NotImplementedError.new("Cannot mix $ directives with non: #{partial_selector.inspect}") if has_non_directive?(partial_selector)
           partial_selector.all? do |k, v|
             directive_match?(k, v, value)
-         end
+          end
         end
       else
         raise "Unsupported selector #{partial_selector.inspect}"

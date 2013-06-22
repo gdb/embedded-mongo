@@ -142,4 +142,15 @@ class InterfaceTest < Test::Unit::TestCase
     assert_equal(10, res2[1]['a'])
     assert_equal(nil, res2[2]['a'])
   end
+
+  def test_or_support
+    @foo_collection.insert({ 'e' => 10 })
+    @foo_collection.insert({ 'e' => 20 })
+    @foo_collection.insert({ 'e' => 30 })
+
+    cursor1 = @foo_collection.find(:$or=>[{'e'=>10}, {'e'=>20}])
+    res1 = cursor1.to_a
+    assert_equal(2, res1.length)
+    p res1
+  end
 end
