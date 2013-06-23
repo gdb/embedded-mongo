@@ -160,6 +160,10 @@ module EmbeddedMongo::Backend
           v.any? do |partial_selector| 
             selector_match?(partial_selector, doc)
           end
+        elsif(k == "$and")
+          v.all? do |partial_selector|
+            selector_match?(partial_selector, doc)
+          end
         else
           partial_match?(v, doc[k]) 
         end
