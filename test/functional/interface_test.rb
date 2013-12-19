@@ -37,7 +37,7 @@ class InterfaceTest < Test::Unit::TestCase
       selector,
       {'$set'=>{'baz'=>'bingo'}},
       :upsert => true
-    )
+      )
     cursor = @foo_collection.find(selector)
     assert_equal 1, cursor.count
     entry = cursor.first
@@ -48,12 +48,12 @@ class InterfaceTest < Test::Unit::TestCase
     selector = {'fubar'=>'rubar'}
     @foo_collection.insert(
       selector.merge('tweedle'=>'dee')
-    )
+      )
     @foo_collection.update(
       selector,
       {'$set'=>{'baz'=>'bingo'}},
       :upsert => true
-    )
+      )
     cursor = @foo_collection.find(selector)
     assert_equal 1, cursor.count
     entry = cursor.first
@@ -65,11 +65,11 @@ class InterfaceTest < Test::Unit::TestCase
     selector = {'fubar'=>'rubar'}
     @foo_collection.insert(
       selector.merge('baz'=>1)
-    )
+      )
     @foo_collection.update(
       selector,
       {'$inc'=>{'baz'=>2}}
-    )
+      )
     cursor = @foo_collection.find(selector)
     assert_equal 1, cursor.count
     entry = cursor.first
@@ -80,13 +80,13 @@ class InterfaceTest < Test::Unit::TestCase
     selector = {'fubar'=>'rubar'}
     @foo_collection.insert(
       selector.merge('baz'=>'not an integer')
-    )
+      )
 
     assert_raise(Mongo::OperationFailure) do
       @foo_collection.update(
         selector,
         {'$inc'=>{'baz'=>2}}
-      )
+        )
     end
   end
 
@@ -95,7 +95,7 @@ class InterfaceTest < Test::Unit::TestCase
       {'foo' => 'bart','_id'=>0xdeadbeef},
       {'$set'=>{'baz'=>'bingo'}},
       :upsert => true
-    )
+      )
     cursor = @foo_collection.find({ 'foo' => 'bart' })
     assert_equal 1, cursor.count
     entry = cursor.first
@@ -142,4 +142,37 @@ class InterfaceTest < Test::Unit::TestCase
     assert_equal(10, res2[1]['a'])
     assert_equal(nil, res2[2]['a'])
   end
+
+  def test_or_support
+    @foo_collection.insert({ 'e' => 10 })
+    @foo_collection.insert({ 'e' => 20 })
+    @foo_collection.insert({ 'e' => 30 })
+
+    cursor1 = @foo_collection.find(:$or=>[{'e'=>10}, {'e'=>20}])
+    res1 = cursor1.to_a
+    assert_equal(2, res1.length)
+    p res1
+  end
+
+  def test_and_support
+    @foo_collection.insert({ 'e' => 10 })
+    @foo_collection.insert({ 'e' => 20 })
+    @foo_collection.insert({ 'e' => 30 })
+
+    cursor1 = @foo_collection.find({:$or=>[{'e'=>10}, {'e'=>20}], :$and=>[{'e'=>10}]})
+    res1 = cursor1.to_a
+    assert_equal(1, res1.length)
+  end
+
+  def test_for_in
+    @foo_collection.insert({'q'=>['der', 'dor']})
+    @foo_collection.insert({'q'=>['dar', 'dot']})
+    @foo_collection.insert({'q'=>['dot']})
+
+
+    cursor1 = @foo_collection.find({'q'=>'dot'})
+    res1 = cursor1.to_a
+    assert_equal(2, res1.length)
+  end
+
 end
