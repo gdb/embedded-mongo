@@ -1,5 +1,16 @@
 module EmbeddedMongo
   class Collection < Mongo::Collection
+    # In recent upgrades to the mongo libary (~1.12), the internals of the insert method
+    # were changed so that it no longer calls the insert_documents below. This override
+    # is replicating the behavior from mongo 1.8 so that existing unit tests work
+    # after upgrading to a newer mongo framework.
+    def insert(doc_or_docs, opts={})
+      doc_or_docs = [doc_or_docs] unless doc_or_docs.is_a?(Array)
+      doc_or_docs.collect! {|doc| BSON::ObjectId.create_pk(doc)}
+      result = insert_documents(doc_or_docs, @name, true, false, opts)
+      result.size > 1 ? result : result.first
+    end
+
     def insert_documents(documents, collection_name=@name, check_keys=true, safe=false, opts={})
       # TODO: do something with check_keys / safe
       EmbeddedMongo.log.debug("insert_documents: #{documents.inspect}, #{collection_name.inspect}, #{check_keys.inspect}, #{safe.inspect}, #{opts.inspect}")
@@ -43,14 +54,14 @@ module EmbeddedMongo
       raise RuntimeError, "Unknown options [#{opts.inspect}]" unless opts.empty?
 
       cursor = Cursor.new(self, {
-        :selector    => selector, 
-        :fields      => fields, 
-        :skip        => skip, 
+        :selector    => selector,
+        :fields      => fields,
+        :skip        => skip,
         :limit       => limit,
-        :order       => sort, 
-        :hint        => hint, 
-        :snapshot    => snapshot, 
-        :timeout     => timeout, 
+        :order       => sort,
+        :hint        => hint,
+        :snapshot    => snapshot,
+        :timeout     => timeout,
         :batch_size  => batch_size,
         :transformer => transformer,
       })
